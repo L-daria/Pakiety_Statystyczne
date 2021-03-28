@@ -1,0 +1,168 @@
+---
+title: "Lista 12"
+author: "Daria Plewa"
+date: "19/01/2021"
+output: html_document
+---
+## Załadowanie danych i bibliotek
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+url <- 'http://theta.edu.pl/wp-content/uploads/2020/10/genomes.csv'
+genomy = read.csv(url, header=TRUE, sep=";", dec=".")
+
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+```
+## Czyszczenie danych 
+Dane czyścimy aby pozbyć się wartości pustych lub błędnych.
+```{r}
+genomy$size[genomy$size == '.'] <- NA
+genomy$size <- as.numeric(as.character(genomy$size))
+genomy$size[is.na(genomy$size)] <- round(mean(genomy$size, na.rm = T), digits = 2)
+
+genomy$GC[genomy$GC == 0] <- NA
+
+genomy$habitat[genomy$habitat == ''] <- NA
+genomy$habitat <- as.character(genomy$habitat)
+
+```
+
+
+
+## Zadanie 1
+Stwórz wykres, który zobrazuje liczbę bakterii zamieszkujących każde środowisko.
+```{r fig.height=10, fig.width=15}
+
+x = table(genomy$habitat)
+
+barplot(x, main = 'Liczba bakterii zamieszkujących poszczególne środowiska',xlab= 'środowisko', ylab='liczba bakteri',cex.names = 1.5)
+
+```
+
+```{r fig.height=10, fig.width=15}
+
+ggplot(data = genomy) + geom_bar(aes(x = habitat, fill = habitat)) + xlab('środowisko') + ylab('liczba bakterii') + ggtitle('Liczba bakterii zamieszkujących poszczególne środowiska')
+
+```
+**Interpretacja** Za pomocą wykresu możemy określić w jakim środowisku żyje najwiecej bakterii a w którym najmniej. Najwięcej bakterii żyje w środowisku 'Host-associated', a najmniej w 'Terrestial'.
+
+## Zadanie 2
+Zobrazuj jak rozkłada się wielkość genomu w zbiorze danych.
+
+```{r fig.height=10, fig.width=15}
+hist(genomy$size, freq = FALSE,
+    main = "Rozkład wielkośc genomów dla bakterii",
+    ylab = "Częstość występowania bakterii", xlab = "Wielkość bakterii",
+    col = 'blue',
+    ylim = c(0.0, 0.25))
+lines(density(genomy$size))
+grid()
+
+
+```
+```{r fig.height=10, fig.width=15}
+ggplot(data = genomy,aes(x = size))+
+  geom_histogram(aes(y = ..density..), binwidth = 0.5, fill = 'yellow',  col = 'black') +
+  ylab("Czestosc") +
+  xlab("Wielkosc genomu") +
+  ggtitle("Histogram wielkosci genomu") +
+  geom_density(alpha = 0.2, fill = "black")
+
+
+```
+**Wnioski** rozkład bakterii nie pochodzi z rozkładu normalnego. Rozkłady są prawoskośne. Można również sprawdzić rozkład za pomocą funkcji Q-Q Plot
+
+```{r fig.height=10, fig.width=15}
+qqnorm(genomy$size)
+qqline(genomy$size, col = 'blue')
+grid()
+```
+**Wnioski dla G-Gplot** wartości nie pokrywają się z linią rozkładu normalnego dlatego nie możemy powiedzieć, że wielkość genomów bakterii pochodzą z rozkładu typu normlanym.
+
+
+
+## Zadanie 3
+Wybierz trzy grupy bakterii i porównaj na jednym wykresie zawartość par GC w ich
+genomach.
+```{r fig.height=10, fig.width=15}
+
+dane = filter(genomy, genomy$group %in% c('Gammaproteobacteria','Betaproteobacteria','Alphaproteobacteria'))
+dane$group <- droplevels(dane$group)
+
+
+boxplot(GC ~ group, data = dane, main = 'Zawartosc par GC w genomie dla grup bakterii',ylab = 'Czestosc wystepowania', xlab = 'Grupa bakterii')
+
+```
+```{r fig.height=10, fig.width=15}
+
+ggplot(data = dane) +
+geom_boxplot(aes(x = group, y = GC, fill = group)) +
+xlab('Grupa bakterii') +
+ylab('Czestosc wystepowania') +
+ggtitle('Zawartosc par GC w genomie dla grup bakterii')
+```
+**Wnioski** Na podstawie rozkładu pudełkowego możemy okreslić kwartyle częstości występowania dla poszczególnych grup bakterii. Każda z lini poziomych na wykresie oznacza kolejny kwartyl, 2 kwartylem - czyli najbardziej wyeksponowanym na obu wykresach jest mediana. Pojedyńcze punkty znajdujące się poniżej lub powyżej wykresów to wartości odstające. Linie pionowe na wykresach oznaczają nam wartości maksymalne olub minimalne - są to wąsy. 
+
+## Zadanie 4
+Wykreśl zależności pomiędzy wielkością genomu, a zawartością par GC.
+
+```{r fig.height=10, fig.width=15}
+
+x = genomy$GC
+y = genomy$size
+plot(x,y, main = 'Zaleznosc pomiedzy wielkoscia genomu a zawartoscia par GC', xlab = 'wielkosc genomu', ylab = 'zawartosc par GC')
+
+cor(x,y,use = "complete.obs")
+# za pomocą funkcji cor możemy sprawdzić współczynnik korelacji dwóch zmiennych.
+
+```
+```{r fig.height=10, fig.width=15}
+ggplot(data = genomy) +
+  geom_point(aes(x = size, y = GC),alpha = 0.5, color = "blue") +
+  ylab("Zawartość par GC") +
+  xlab("Wielkosc genomu") +
+  ggtitle("Histogram wielkosci genomu")
+```
+**Wnioski** Za wykresu scatter plot możemy powiedzieć, że wielkość genomu zwiększa się wraz z większą ilością par GC bakterii.
+
+## Zadanie 5
+Dla zbioru danych mpg, znajdującego się w pakiecie ggplot2, stworzono poniższy
+wykres. Odtwórz go.
+
+
+
+```{r fig.height=10, fig.width=15}
+data(mpg)
+
+
+
+p1 = ggplot(data = mpg) +
+  geom_boxplot(aes(x = class, y = hwy, fill = class)) +
+  xlab("Typ auta") +  
+  ylab("Ilosc mil przejechanych na galonie") +
+  labs(fill = 'Typ auta') 
+
+p2 = ggplot(data = mpg) +
+  geom_bar(aes(x = class, fill = class)) +
+  xlab("Typ auta") +  
+  ylab("Ilosc") +
+  ggtitle("Ilosc aut danego typu") +
+  labs(fill = 'Typ auta')
+
+p3 <- ggplot(data = mpg) +
+  geom_point(aes(x = displ, y = hwy)) +
+  ggtitle("Wykres zaleznosci mil przejechanych w godzine na \n autostradzie i pojemnosci silnika") +
+  xlab("displ") +
+  ylab("hwy")
+
+
+x = ggarrange(ggarrange(p1, p2,ncol = 2, labels = c('A','B')),p3, labels = c('','C'), nrow = 2)
+x
+
+
+
+
+
+
+
+```

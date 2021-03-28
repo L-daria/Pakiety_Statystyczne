@@ -1,0 +1,151 @@
+---
+title: "Lista_11"
+author: " Daria Plewa"
+date: "12/01/2021"
+output: html_document
+---
+
+
+
+## Zadanie 1
+Wczytaj dane uni. Zbiór danych zawiera cztery zmienne: 
+
+a. admit – informacja o przyjęciu bądź nie (1- przyjęcie, 0 - nie)  
+
+b. gre – ilość punktów na egzaminie maturalnym 
+
+c. gpa – średnia ilość punktów 
+
+d. rank – ranking (1 – najlepsza, 4 - najgorsza)
+
+Do importu wykorzystałyśmy funkcje read.csv, gdzie nadałyśmy mu nazwę uni oraz sprecyzowałyśmy wyraz oddzielający dane od siebie wzajemnie, nastepnie przekształcamy dane aby były one odpowiednio odczytane do dalszych analiz. Dane zostały zimportowane ze strony theta.
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+url <- 'http://theta.edu.pl/wp-content/uploads/2020/11/uni.csv'
+uni = read.csv(url, header=TRUE, sep=",", dec=".")
+
+str(uni)
+uni$rank <- as.factor(uni$rank)
+uni$admit <- as.factor(uni$admit)
+```
+
+
+## Zadanie 2
+Przy pomocy pakietu dplyr stwórz tabelę opisującą średnią ilość punktów z egzaminu maturalnego (wyliczoną na podstawie zmiennej gre) w zależności od tego czy dane osoba była przyjęta na studia oraz rankingu. Co można powiedzieć o uzyskanym podsumowaniu?
+
+Tworzymy tablekę za pomocą funkcji grup_by i summarise
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(dplyr)
+tabela = uni %>% group_by(admit, rank) %>% summarise(mean = mean(gre))
+tbl_df(tabela)
+```
+wyższą średnią punktów posiadają osoby które dostały się na uniwersytet, 
+
+## Zadanie 3
+Stwórz cztery modele, w których za pomocą regresji logistycznej sprawdzisz, które zmienne maja wpływ na przyjęcie na uczelnię. Dla wszystkich modeli postaw hipotezy oraz zinterpretuj
+każdy z modeli. 
+a. gre
+b. gpa
+c. rank
+d. gre, gpa, rank
+
+a. gre
+
+H0 : Wyniki egzaminu nie mają wpływu na przyjęcie na studia.
+
+H1 : Wyniki egzaminu mają wpływ na przyjęcie na studia.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+model_1 = glm(formula = admit~gre,family = 'binomial', data = uni)
+summary(model_1)
+```
+P-value < 0.05, przyjmujemy H1. Wyniki egzaminu maja wpyw na przyjecie na studia.
+
+
+b. gpa
+
+H0 : Ilość punktów na egzaminie nie ma wpływu na przyjęcie na studia.
+
+H1 : Ilość punktów na egzaminie ma wpływ na przyjęcie na studia.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+model_2 = glm(formula = admit~gpa,family = 'binomial', data = uni)
+summary(model_2)
+```
+P-value< 0,05, przyjmujemy H1 ilość punktó ma wpływ na przyjęcie na studia 
+
+
+c. rank
+
+H0 : Średnia ilość punktów nie ma wpływu na przyjęcie na studia.
+
+H1 : Średnia ilość punktów ma wpływ na przyjęcie na studia.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+model_3 = glm(formula = admit~rank,family = 'binomial', data = uni)
+summary(model_3)
+```
+P-value < 0.05, przyjmujemy H1. Wyniki egzaminu ma wplyw na przyjęcie na studia.
+
+d. gre, gpa, rank
+
+H0 : Wyniki egzaminu nie mają wplywu na przyjęcie na studia.
+
+H1 : Wyniki egzaminu mają wplyw na przyjęcie na studia.
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+model_4 = glm(formula = admit~gre+gpa+rank,family = 'binomial', data = uni)
+summary(model_4)
+```
+
+H0 : Ilość punktów na egzaminie, średnia ilośc punktów oraz numer rankingu nie mają wpływu na dostanie się na studia.
+H1 : Ilość punktów na egzaminie, średnia ilośc punktów oraz numer rankingu mają wpływ na dostanie się na studia.
+
+P-value < 0.05, przyjmujemy H1. Ilość punktów na egzaminie, średnia ilośc punktów oraz numer rankingu mają wpływ na dostanie się na studia.
+
+
+
+## Zadanie 4
+Znajdź informację o kryterium informacyjnym Akaikego oraz Bayesowskim kryterium informacyjne. Jak należy je interpretować.
+
+Kryterium informacyjnym Akaikego - jest powszechnie używane do porównywania modeli statystycznych. Nie dostarcza ono miary dopasowania modelu do danych, ale może być użyteczne do pomiaru i testu względnej mocy predykcyjnej testowanych modeli. Dany zestaw modeli statystycznych może zwracać różne miary AIC, ale pożądany i lepszy jest ten z wyraźnie mniejszą miarą AIC. Na podstawie tej miary możemy wybrać najbardziej oszczędny i informatywny model statystyczny.
+
+Bayesowskie kryterium informacyjne - jeden ze wskaźników dopasowania modelu. Najlepszym modelem jest ten dla którego wartość kryterium informacyjnego jest najniższa.
+
+
+## Zadanie 5
+Co możesz powiedzieć o dopasowaniach modeli, na podstawie AIC i BIC, który z nich jest najlepszy?
+
+BIC oraz AIC są najpowszechniej wykorzystywanymi kryteriami informacyjnymi, a więc metodami porównywania modeli dla zmiennej zależnej, aby dokonać selekcji najlepszego modelu.
+Zgodnie z przyjętą konwencją, najlepszym modelem jest ten dla którego wartość kryterium informacyjnego jest najniższa.
+
+## Zadanie 6
+Wygeneruj poniższy wykres oraz wyciągnij na jego podstawie wnioski, wykres należy wygenerować na podstawie modelu z zadania 3, podpunktu d.
+
+
+
+
+
+```{r fig.height=6, fig.width=11, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(ggplot2)
+data <- data.frame(probability = model_4$fitted.values, admit = uni$admit)
+data <- data[order(data$probability),]
+data$rank <- 1:nrow(data)
+ggplot(data = data, aes(x = rank, y = probability)) +
+  geom_point(aes(color = admit), shape = 4, stroke = 1) +
+  xlab("Osoba") +
+  ylab("Przewidywane prawdopodobieństwo dostania się na studia")
+
+```
+
+Tworzymy dataframe z interesującymi nas danymi następnie segregujemy je za pomocą order, i na sam koniec tworzymy qqplot który personalizujemy do naszych potrzeb. 
+
+
+
+
+
+
+
+
+
+
+
+
